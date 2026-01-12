@@ -13,8 +13,6 @@
     --accent: #651fff;  /* Deep Purple */
     --text: #ffffff;
     --text-dim: #b0b0b0;
-    --line-major: #333;
-    --line-root: #555;
   }
 
   * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
@@ -33,32 +31,44 @@
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     display: none; flex-direction: column; align-items: center; justify-content: center;
     background: var(--bg); z-index: 10;
-    padding: 20px;
+    padding: 20px; overflow-y: auto;
   }
   .screen.active { display: flex; }
 
   /* --- TYPOGRAPHY --- */
-  h1 { font-weight: 200; letter-spacing: 2px; margin-bottom: 30px; color: var(--primary); font-size: 2rem; }
-  h2 { font-weight: 400; font-size: 1.2rem; color: var(--text-dim); margin-bottom: 10px; }
+  h1 { font-weight: 200; letter-spacing: 2px; margin-bottom: 20px; color: var(--primary); font-size: 2rem; }
+  h2 { font-weight: 400; font-size: 1.1rem; color: var(--text-dim); margin-bottom: 10px; margin-top: 20px; }
   p { color: var(--text-dim); text-align: center; max-width: 400px; line-height: 1.5; }
 
   /* --- CONTROLS --- */
-  .btn-group { display: flex; gap: 10px; margin: 15px 0; }
+  .btn-group { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; justify-content: center; }
   
   button {
     background: var(--panel); border: 1px solid #333; color: var(--text);
-    padding: 15px 25px; border-radius: 50px; font-size: 1rem;
+    padding: 12px 20px; border-radius: 8px; font-size: 0.95rem;
     cursor: pointer; transition: transform 0.1s, background 0.2s;
-    min-width: 120px; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;
+    min-width: 80px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;
   }
   button:active { transform: scale(0.95); }
-  button.primary { background: var(--primary); color: #000; border: none; box-shadow: 0 4px 15px rgba(0,230,118, 0.3); }
+  
+  /* Primary Action Buttons */
+  button.primary { 
+    background: var(--primary); color: #000; border: none; 
+    box-shadow: 0 4px 15px rgba(0,230,118, 0.3); border-radius: 50px;
+    padding: 15px 30px; min-width: 120px;
+  }
+  
+  /* Manual Control Buttons (Small) */
+  button.control {
+    padding: 10px 10px; min-width: 60px; font-size: 0.8rem; background: #222;
+  }
+
   button.secondary { background: transparent; border: 1px solid #555; }
   button.danger { color: #ff5252; border-color: #ff5252; }
 
   /* --- TOGGLES --- */
   .toggle-row {
-    display: flex; background: #222; border-radius: 30px; pading: 5px; margin: 20px 0;
+    display: flex; background: #222; border-radius: 30px; padding: 5px; margin: 10px 0;
   }
   .toggle-row input { display: none; }
   .toggle-row label {
@@ -82,19 +92,14 @@
 
   /* --- VOCAL RANGE VISUALIZER --- */
   #vrmVisualizer {
-    width: 100%; max-width: 300px; height: 300px;
-    background: #000; border-radius: 20px; border: 1px solid #333;
+    width: 100%; max-width: 300px; height: 200px;
+    background: #000; border-radius: 12px; border: 1px solid #333;
     position: relative; overflow: hidden; margin: 20px 0;
   }
   .vrm-bar {
     position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
     background: var(--primary); box-shadow: 0 0 15px var(--primary);
     transition: bottom 0.1s linear;
-  }
-  .vrm-range-box {
-    position: absolute; left: 0; width: 100%; background: rgba(255,255,255,0.1);
-    border-top: 1px dashed #fff; border-bottom: 1px dashed #fff;
-    pointer-events: none;
   }
 
   /* --- FEEDBACK FLOATING TEXT --- */
@@ -115,24 +120,35 @@
 <div id="screenMenu" class="screen active">
   <h1>VOCAL TRAINER</h1>
   
-  <div style="text-align:center; margin-bottom:20px;">
-    <h2>Current Range</h2>
-    <p id="rangeDisplay" style="color:var(--primary); font-weight:bold; font-size:1.2rem;">C3 - C4</p>
-    <button class="secondary" id="btnGoToRange" style="margin-top:10px; padding: 8px 15px; font-size:0.8rem;">📏 Measure My Voice</button>
-  </div>
+  <div style="text-align:center; width: 100%; max-width: 500px;">
+    
+    <div style="background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333;">
+      <h2 style="margin-top:0;">Range Settings</h2>
+      <p id="rangeDisplay" style="color:var(--primary); font-weight:bold; font-size:1.4rem; margin: 10px 0;">C3 - G4</p>
+      
+      <div class="btn-group" style="margin-bottom: 10px;">
+        <button class="control" onclick="App.shiftRange(-12)">Oct -</button>
+        <button class="control" onclick="App.shiftRange(-1)">Note -</button>
+        <button class="control" onclick="App.shiftRange(1)">Note +</button>
+        <button class="control" onclick="App.shiftRange(12)">Oct +</button>
+      </div>
 
-  <h2>Select Scale</h2>
-  <div class="toggle-row">
-    <input type="radio" name="scale" id="sMaj" value="major" checked><label for="sMaj">Major</label>
-    <input type="radio" name="scale" id="sMin" value="minor"><label for="sMin">Minor</label>
-    <input type="radio" name="scale" id="sChr" value="chromatic"><label for="sChr">All</label>
-  </div>
+      <button class="secondary" id="btnGoToRange" style="width: 100%; margin-top: 5px;">🎤 Auto-Measure Range</button>
+    </div>
 
-  <h2>Start Training</h2>
-  <div class="btn-group">
-    <button class="primary" onclick="App.startGame(1)">1 Note</button>
-    <button class="primary" onclick="App.startGame(2)">2 Notes</button>
-    <button class="primary" onclick="App.startGame(3)">3 Notes</button>
+    <h2>Select Scale</h2>
+    <div class="toggle-row" style="justify-content: center;">
+      <input type="radio" name="scale" id="sMaj" value="major" checked><label for="sMaj">Major</label>
+      <input type="radio" name="scale" id="sMin" value="minor"><label for="sMin">Minor</label>
+      <input type="radio" name="scale" id="sChr" value="chromatic"><label for="sChr">Chrom</label>
+    </div>
+
+    <h2 style="margin-bottom: 15px;">Start Training</h2>
+    <div class="btn-group">
+      <button class="primary" onclick="App.startGame(1)">1 Note</button>
+      <button class="primary" onclick="App.startGame(2)">2 Notes</button>
+      <button class="primary" onclick="App.startGame(3)">3 Notes</button>
+    </div>
   </div>
 </div>
 
@@ -147,8 +163,8 @@
   </div>
 
   <div class="btn-group">
-    <button class="secondary" onclick="App.stopRangeTest()">Cancel</button>
-    <button class="primary" id="btnRangeAction" onclick="App.toggleRangeTest()">Start Listening</button>
+    <button class="secondary" onclick="App.stopRangeTest()">Back</button>
+    <button class="primary" id="btnRangeAction" onclick="App.toggleRangeTest()">Start</button>
   </div>
 </div>
 
@@ -297,7 +313,7 @@ const NoteSys = {
 const App = {
   state: 'MENU', // MENU, RANGE, GAME
   rootMidi: 48, // C3 default
-  rangeOctaves: 2,
+  rangeOctaves: 1.5, // Default range for the game grid
   gameMode: 1, // 1, 2, or 3 notes
   
   // Game vars
@@ -316,6 +332,7 @@ const App = {
   ctx: document.getElementById('gameCanvas').getContext('2d'),
 
   init() {
+    this.updateRangeDisplay();
     this.resize();
     window.addEventListener('resize', () => this.resize());
     
@@ -331,6 +348,22 @@ const App = {
     this.canvas.height = window.innerHeight;
     // Re-render background if in game
     if(this.state === 'GAME') this.renderStaticBG();
+  },
+
+  // --- MANUAL RANGE CONTROLS (RESTORED) ---
+  shiftRange(semitones) {
+    this.rootMidi += semitones;
+    // Cap reasonable limits (C2 to C6)
+    if(this.rootMidi < 36) this.rootMidi = 36;
+    if(this.rootMidi > 84) this.rootMidi = 84;
+    this.updateRangeDisplay();
+  },
+
+  updateRangeDisplay() {
+    const low = this.rootMidi;
+    const high = Math.floor(this.rootMidi + (this.rangeOctaves * 12));
+    document.getElementById('rangeDisplay').innerText = 
+      `${NoteSys.getFullName(low)} - ${NoteSys.getFullName(high)}`;
   },
 
   // --- SCREENS ---
@@ -360,15 +393,10 @@ const App = {
       // Save
       this.isListeningRange = false;
       if(this.rangeMin < this.rangeMax) {
-        // Set game root to lowest C below rangeMin, or just rangeMin
-        // Let's snap to nearest C for cleaner scale logic
+        // Snap to nearest C for cleaner scale logic
         const lowMidi = NoteSys.ftom(this.rangeMin);
-        const highMidi = NoteSys.ftom(this.rangeMax);
         this.rootMidi = lowMidi;
-        
-        // Update display
-        document.getElementById('rangeDisplay').innerText = 
-          `${NoteSys.getFullName(lowMidi)} - ${NoteSys.getFullName(highMidi)}`;
+        this.updateRangeDisplay();
       }
       this.stopRangeTest();
     }
@@ -377,7 +405,7 @@ const App = {
   stopRangeTest() {
     this.state = 'MENU';
     this.showScreen('screenMenu');
-    document.getElementById('btnRangeAction').innerText = "Start Listening";
+    document.getElementById('btnRangeAction').innerText = "Start";
     document.getElementById('btnRangeAction').classList.remove('danger');
   },
 
@@ -390,8 +418,8 @@ const App = {
       const scaleType = document.querySelector('input[name="scale"]:checked').value;
       
       // GENERATE VALID NOTES FOR THE GRID
-      this.gridNotes = NoteSys.getScaleNotes(this.rootMidi, 1.5, scaleType); // 1.5 octave range for game
-      if(this.gridNotes.length < 5) { alert("Range too small!"); return; }
+      this.gridNotes = NoteSys.getScaleNotes(this.rootMidi, this.rangeOctaves, scaleType);
+      if(this.gridNotes.length < 5) { alert("Range too small or scale mismatch!"); return; }
 
       // Reset Vars
       this.score = 0; this.seqCount = 0;
@@ -460,11 +488,6 @@ const App = {
             name: note.name,
             collected: false
           });
-        }
-        // If last note spawned, release lock
-        if(i === sequence.length - 1) {
-           // Allow next sequence ONLY after all coins are gone or offscreen
-           // We handle that in update()
         }
       }, delayAccumulator * 1000);
 
@@ -535,7 +558,6 @@ const App = {
     if(this.currFreq > 0) {
       // Find relative position within grid
       // We essentially interpolate between grid note frequencies
-      // This ensures the ball lines up perfectly with the lines
       
       const logCurr = Math.log2(this.currFreq);
       const logMin = Math.log2(minF);
