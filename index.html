@@ -3,607 +3,715 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#1e1e1e">
-<title>Sing on Pitch! (Fixed)</title>
+<meta name="theme-color" content="#121212">
+<title>Vocal Trainer Pro</title>
 <style>
   :root {
-    --bg-color: #1e1e1e;
-    --panel-bg: #2d2d2d;
-    --primary: #4caf50;
-    --primary-hover: #43a047;
-    --accent: #ffd700;
-    --text: #f0f0f0;
-    --danger: #e57373;
+    --bg: #121212;
+    --panel: #1e1e1e;
+    --primary: #00e676; /* Bright Green */
+    --accent: #651fff;  /* Deep Purple */
+    --text: #ffffff;
+    --text-dim: #b0b0b0;
+    --line-major: #333;
+    --line-root: #555;
   }
 
-  * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
   
-  html, body {
-    height: 100%; margin: 0; padding: 0; overflow: hidden;
-    background: var(--bg-color);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-
   body {
-    display: flex; justify-content: center; align-items: center;
-    height: 100dvh; 
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+    height: 100dvh; width: 100vw;
+    overflow: hidden;
+    display: flex; flex-direction: column;
   }
 
-  /* --- UI Containers --- */
-  .container {
-    width: 95%; max-width: 500px;
-    text-align: center;
-    display: flex; flex-direction: column; align-items: center;
-    max-height: 100dvh; overflow-y: auto;
+  /* --- SCREENS --- */
+  .screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--bg); z-index: 10;
+    padding: 20px;
   }
+  .screen.active { display: flex; }
 
-  h1 { margin: 10px 0; font-weight: 300; letter-spacing: 1px; color: var(--primary); }
-  p { color: #aaa; margin: 10px 0; font-size: 0.95rem; }
+  /* --- TYPOGRAPHY --- */
+  h1 { font-weight: 200; letter-spacing: 2px; margin-bottom: 30px; color: var(--primary); font-size: 2rem; }
+  h2 { font-weight: 400; font-size: 1.2rem; color: var(--text-dim); margin-bottom: 10px; }
+  p { color: var(--text-dim); text-align: center; max-width: 400px; line-height: 1.5; }
 
-  /* --- Controls --- */
-  .panel {
-    background: var(--panel-bg);
-    border-radius: 12px;
-    padding: 15px;
-    width: 100%;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    border: 1px solid #444;
-  }
-
+  /* --- CONTROLS --- */
+  .btn-group { display: flex; gap: 10px; margin: 15px 0; }
+  
   button {
-    background: var(--panel-bg);
-    border: 1px solid #555;
-    color: #eee;
-    padding: 12px 16px; /* Larger touch target */
-    font-size: 1rem;
-    border-radius: 8px;
-    margin: 4px;
-    cursor: pointer;
-    transition: all 0.2s active;
-    min-height: 48px; 
+    background: var(--panel); border: 1px solid #333; color: var(--text);
+    padding: 15px 25px; border-radius: 50px; font-size: 1rem;
+    cursor: pointer; transition: transform 0.1s, background 0.2s;
+    min-width: 120px; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;
   }
+  button:active { transform: scale(0.95); }
+  button.primary { background: var(--primary); color: #000; border: none; box-shadow: 0 4px 15px rgba(0,230,118, 0.3); }
+  button.secondary { background: transparent; border: 1px solid #555; }
+  button.danger { color: #ff5252; border-color: #ff5252; }
 
-  button:active { transform: scale(0.96); background: #444; }
-
-  .btn-primary { background: var(--primary); border-color: var(--primary); color: white; font-weight: 600; width: 80%; margin: 8px auto; display: block; }
-  .btn-danger { background: var(--danger); border-color: var(--danger); color: white; }
-
-  /* --- Radio Toggle --- */
-  .toggle-group { display: flex; justify-content: center; background: #222; border-radius: 20px; padding: 4px; margin: 10px auto; width: fit-content; }
-  .toggle-group input { display: none; }
-  .toggle-group label {
-    padding: 8px 16px; border-radius: 16px; font-size: 0.85rem; cursor: pointer; color: #888; transition: 0.2s;
+  /* --- TOGGLES --- */
+  .toggle-row {
+    display: flex; background: #222; border-radius: 30px; pading: 5px; margin: 20px 0;
   }
-  .toggle-group input:checked + label { background: var(--primary); color: white; font-weight: 600; }
+  .toggle-row input { display: none; }
+  .toggle-row label {
+    padding: 10px 20px; cursor: pointer; color: #666; transition: 0.2s; border-radius: 30px;
+  }
+  .toggle-row input:checked + label { background: var(--primary); color: #000; font-weight: bold; }
 
-  /* --- Game View --- */
-  #gameContainer {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
-    background: #111; z-index: 100;
-    display: none; justify-content: center; align-items: center;
-  }
-
-  canvas {
-    background: #222;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    max-width: 100%; max-height: 100%;
-  }
-
-  /* --- HUD --- */
-  #hud, #debug {
-    position: absolute; pointer-events: none; user-select: none;
-    text-shadow: 0 1px 2px black;
-  }
-  #hud { top: 15px; left: 15px; font-size: 1.1rem; font-weight: bold; color: white; z-index: 10; }
-  #debug { top: 15px; right: 15px; font-size: 0.9rem; color: #aaa; text-align: right; font-family: monospace; }
-  
-  #gameControls { 
-    position: absolute; bottom: 20px; left: 0; width: 100%; 
-    text-align: center; pointer-events: auto; z-index: 20; 
-  }
-  
-  .feedback-float {
-    position: absolute; font-weight: 900; font-size: 1.5rem;
+  /* --- GAME HUD --- */
+  #gameCanvas { width: 100%; height: 100%; display: block; }
+  .hud-top {
+    position: absolute; top: 20px; left: 0; width: 100%;
+    display: flex; justify-content: space-between; padding: 0 20px;
     pointer-events: none; z-index: 20;
-    animation: floatUp 0.8s ease-out forwards;
-    text-shadow: 2px 2px 0 #000;
+  }
+  .score-box { font-size: 1.5rem; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+  .hud-bottom {
+    position: absolute; bottom: 30px; width: 100%; text-align: center;
+    pointer-events: none; z-index: 20;
+  }
+  #quitBtn { pointer-events: auto; padding: 10px 30px; font-size: 0.9rem; opacity: 0.7; }
+
+  /* --- VOCAL RANGE VISUALIZER --- */
+  #vrmVisualizer {
+    width: 100%; max-width: 300px; height: 300px;
+    background: #000; border-radius: 20px; border: 1px solid #333;
+    position: relative; overflow: hidden; margin: 20px 0;
+  }
+  .vrm-bar {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
+    background: var(--primary); box-shadow: 0 0 15px var(--primary);
+    transition: bottom 0.1s linear;
+  }
+  .vrm-range-box {
+    position: absolute; left: 0; width: 100%; background: rgba(255,255,255,0.1);
+    border-top: 1px dashed #fff; border-bottom: 1px dashed #fff;
+    pointer-events: none;
   }
 
-  @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(0) scale(0.8); }
-    50% { transform: translateY(-20px) scale(1.2); }
-    100% { opacity: 0; transform: translateY(-40px) scale(1); }
+  /* --- FEEDBACK FLOATING TEXT --- */
+  .feedback {
+    position: absolute; font-weight: 900; font-size: 2rem;
+    animation: popUp 0.8s ease-out forwards; pointer-events: none;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
   }
-
-  /* --- Console Log for Mobile --- */
-  #mobileConsole {
-    position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
-    background: rgba(0,0,0,0.8); color: #0f0; font-family: monospace;
-    font-size: 10px; overflow-y: scroll; padding: 5px; z-index: 999;
-    border-top: 1px solid #333; pointer-events: none;
-    display: none; /* Hidden by default unless error */
-  }
-
-  /* --- Overlays --- */
-  .overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 200; backdrop-filter: blur(5px);
-  }
-  .overlay-content {
-    background: var(--panel-bg); padding: 30px; border-radius: 15px;
-    text-align: center; border: 1px solid #555; width: 85%; max-width: 400px;
+  @keyframes popUp {
+    0% { transform: scale(0.5) translateY(0); opacity: 0; }
+    20% { transform: scale(1.2) translateY(-10px); opacity: 1; }
+    100% { transform: scale(1.0) translateY(-50px); opacity: 0; }
   }
 </style>
 </head>
 <body>
 
-<div id="mobileConsole"></div>
-
-<div id="menu" class="container">
-  <h1>Sing on Pitch!</h1>
+<div id="screenMenu" class="screen active">
+  <h1>VOCAL TRAINER</h1>
   
-  <div class="panel">
-    <p>Range: <span id="octaveDisplay" style="color:white; font-weight:bold">C3 - C4</span></p>
-    <div style="display:flex; justify-content:center; flex-wrap:wrap;">
-      <button id="octaveDownBtn">Oct -</button>
-      <button id="noteDownBtn">Note -</button>
-      <button id="noteUpBtn">Note +</button>
-      <button id="octaveUpBtn">Oct +</button>
-    </div>
-
-    <p style="margin-top:15px">Scale Type:</p>
-    <div class="toggle-group">
-      <input type="radio" id="sMaj" name="scale" value="major" checked><label for="sMaj">Major</label>
-      <input type="radio" id="sMin" name="scale" value="minor"><label for="sMin">Minor</label>
-      <input type="radio" id="sChr" name="scale" value="chromatic"><label for="sChr">Chrom</label>
-    </div>
+  <div style="text-align:center; margin-bottom:20px;">
+    <h2>Current Range</h2>
+    <p id="rangeDisplay" style="color:var(--primary); font-weight:bold; font-size:1.2rem;">C3 - C4</p>
+    <button class="secondary" id="btnGoToRange" style="margin-top:10px; padding: 8px 15px; font-size:0.8rem;">📏 Measure My Voice</button>
   </div>
 
-  <p>Select Difficulty:</p>
-  <button class="btn-primary" id="btnSingle">1-Note Challenge</button>
-  <button class="btn-primary" id="btnDouble">2-Note Challenge</button>
-  <button class="btn-primary" id="btnTriple">3-Note Challenge</button>
-  
-  <p id="statusMsg" style="color: #e57373; font-weight: bold;"></p>
+  <h2>Select Scale</h2>
+  <div class="toggle-row">
+    <input type="radio" name="scale" id="sMaj" value="major" checked><label for="sMaj">Major</label>
+    <input type="radio" name="scale" id="sMin" value="minor"><label for="sMin">Minor</label>
+    <input type="radio" name="scale" id="sChr" value="chromatic"><label for="sChr">All</label>
+  </div>
+
+  <h2>Start Training</h2>
+  <div class="btn-group">
+    <button class="primary" onclick="App.startGame(1)">1 Note</button>
+    <button class="primary" onclick="App.startGame(2)">2 Notes</button>
+    <button class="primary" onclick="App.startGame(3)">3 Notes</button>
+  </div>
 </div>
 
-<div id="gameContainer">
+<div id="screenRange" class="screen">
+  <h2>Vocal Range Finder</h2>
+  <p>Sing from your lowest comfortable note up to your highest note.</p>
+  
+  <div id="vrmVisualizer">
+    <div id="vrmIndicator" class="vrm-bar"></div>
+    <div id="vrmHighMarker" style="position:absolute; right:10px; top:10px; font-size:0.8rem; color:#888;">High: -</div>
+    <div id="vrmLowMarker" style="position:absolute; right:10px; bottom:10px; font-size:0.8rem; color:#888;">Low: -</div>
+  </div>
+
+  <div class="btn-group">
+    <button class="secondary" onclick="App.stopRangeTest()">Cancel</button>
+    <button class="primary" id="btnRangeAction" onclick="App.toggleRangeTest()">Start Listening</button>
+  </div>
+</div>
+
+<div id="screenGame" class="screen" style="padding:0; display:none;">
   <canvas id="gameCanvas"></canvas>
-  <div id="hud">Score: <span id="scoreVal">0</span></div>
-  <div id="debug">Init...</div>
-  <div id="gameControls">
-    <button class="btn-danger" id="quitBtn">Stop</button>
+  
+  <div class="hud-top">
+    <div class="score-box" id="scoreDisplay">0</div>
+    <div style="font-size:0.9rem; color:#888;">SEQ: <span id="seqDisplay">0</span>/10</div>
+  </div>
+
+  <div class="hud-bottom">
+    <button id="quitBtn" class="danger" onclick="App.quitGame()">EXIT GAME</button>
   </div>
 </div>
 
 <script>
-// --- DEBUGGER ---
-function log(msg) {
-  console.log(msg);
-  const c = document.getElementById('mobileConsole');
-  c.style.display = 'block';
-  c.innerHTML += `> ${msg}<br>`;
-  c.scrollTop = c.scrollHeight;
-}
+/**
+ * APP ARCHITECTURE
+ * 1. AudioEngine: Handles Mic & Pitch Detection (YIN)
+ * 2. NoteSystem: Handles Frequency <-> Note conversion & Scale logic
+ * 3. App: State management (Menu -> Game -> Results)
+ */
 
-window.onerror = function(msg, url, line) {
-  log(`ERROR: ${msg} line ${line}`);
-  alert(`Error: ${msg}`);
+const CONSTANTS = {
+  YIN_THRESHOLD: 0.15,
+  SMOOTHING: 0.15,
+  NOTE_DURATION: 0.8, // Seconds per note
+  NOTE_GAP: 0.2, // Silence between notes
+  COIN_SPEED: 200, // Pixels per sec
+  MIN_VOL: 0.01
 };
 
-// --- CONSTANTS ---
-const AUDIO_CTX_OPTS = { latencyHint: 'interactive' };
-const YIN_THRESHOLD = 0.15;
-const SMOOTHING = 0.15;
-const PARTICLE_COUNT = 6;
-const COIN_SPEED_BASE = 280;
+// --- 1. AUDIO ENGINE ---
+const AudioEngine = {
+  ctx: null,
+  analyser: null,
+  buffer: null,
+  mic: null,
+  inited: false,
 
-// --- GLOBALS ---
-let audioCtx, analyser, microphone, buffer;
-let isAudioInit = false;
-let animationId;
-let lastTime = 0;
-let gameRunning = false;
-let mode = 'single';
-let rootMidi = 48; // C3
-let notes = [];
-let currentFreq = 0;
-let smoothedFreq = 0;
-let playerY = 0;
-let score = 0;
-let coinList = [];
-let particles = [];
-let trail = [];
-
-// --- ELEMENTS ---
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false });
-const bgCanvas = document.createElement('canvas');
-const bgCtx = bgCanvas.getContext('2d');
-const elScore = document.getElementById('scoreVal');
-const elDebug = document.getElementById('debug');
-const elOctave = document.getElementById('octaveDisplay');
-
-// ==========================================
-// AUDIO SYSTEM
-// ==========================================
-async function initAudio() {
-  if (isAudioInit) return true;
-  
-  log("Initializing Audio...");
-  
-  // 1. Check Secure Context
-  if (window.location.protocol === 'file:') {
-    alert("ERROR: This game cannot run from a local file. You must run it on a server (localhost or https).");
-    return false;
-  }
-
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) { alert("Web Audio API not supported"); return false; }
-    
-    audioCtx = new AudioContext(AUDIO_CTX_OPTS);
-    
-    // Resume context (needed for mobile Safari/Chrome)
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
+  async init() {
+    if(this.inited) return true;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: false } });
+      this.mic = this.ctx.createMediaStreamSource(stream);
+      this.analyser = this.ctx.createAnalyser();
+      this.analyser.fftSize = 2048;
+      this.mic.connect(this.analyser);
+      this.buffer = new Float32Array(this.analyser.fftSize);
+      this.inited = true;
+      return true;
+    } catch(e) {
+      alert("Microphone access denied.");
+      return false;
     }
+  },
 
-    log("Requesting Mic...");
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      audio: { 
-        echoCancellation: false, 
-        noiseSuppression: true, 
-        autoGainControl: false 
-      } 
-    });
+  getPitch() {
+    if(!this.inited) return null;
+    this.analyser.getFloatTimeDomainData(this.buffer);
     
-    microphone = audioCtx.createMediaStreamSource(stream);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048; 
-    microphone.connect(analyser);
-    buffer = new Float32Array(analyser.fftSize);
-    isAudioInit = true;
-    log("Audio Ready!");
-    return true;
-  } catch (e) {
-    log("Audio Error: " + e.message);
-    alert("Microphone Error: " + e.message + "\nCheck browser permissions.");
-    return false;
-  }
-}
+    // Simple RMS volume check
+    let sum = 0; 
+    for(let i=0; i<this.buffer.length; i++) sum += this.buffer[i]*this.buffer[i];
+    if(Math.sqrt(sum/this.buffer.length) < CONSTANTS.MIN_VOL) return null;
 
-// YIN Pitch Detection
-function getPitch() {
-  analyser.getFloatTimeDomainData(buffer);
-  const ns = buffer.length;
-  const tauBuffer = new Float32Array(ns / 2);
-  
-  for (let tau = 0; tau < ns / 2; tau++) {
-    tauBuffer[tau] = 0;
-    for (let i = 0; i < ns / 2; i++) {
-      const delta = buffer[i] - buffer[i + tau];
-      tauBuffer[tau] += delta * delta;
+    // YIN ALGORITHM
+    const ns = this.buffer.length;
+    const tauBuffer = new Float32Array(ns/2);
+    for(let tau=0; tau<ns/2; tau++) {
+      tauBuffer[tau] = 0;
+      for(let i=0; i<ns/2; i++) {
+        const delta = this.buffer[i] - this.buffer[i+tau];
+        tauBuffer[tau] += delta*delta;
+      }
     }
-  }
-
-  tauBuffer[0] = 1;
-  let runningSum = 0;
-  for (let tau = 1; tau < ns / 2; tau++) {
-    runningSum += tauBuffer[tau];
-    tauBuffer[tau] *= tau / (runningSum || 1);
-  }
-
-  let tauEstimate = -1;
-  for (let tau = 1; tau < ns / 2; tau++) {
-    if (tauBuffer[tau] < YIN_THRESHOLD) {
-      while (tau + 1 < ns / 2 && tauBuffer[tau + 1] < tauBuffer[tau]) tau++;
-      tauEstimate = tau;
-      break;
+    tauBuffer[0] = 1;
+    let runningSum = 0;
+    for(let tau=1; tau<ns/2; tau++) {
+      runningSum += tauBuffer[tau];
+      tauBuffer[tau] *= tau/(runningSum || 1);
     }
+    let tauEstimate = -1;
+    for(let tau=1; tau<ns/2; tau++) {
+      if(tauBuffer[tau] < CONSTANTS.YIN_THRESHOLD) {
+        while(tau+1 < ns/2 && tauBuffer[tau+1] < tauBuffer[tau]) tau++;
+        tauEstimate = tau; break;
+      }
+    }
+    if(tauEstimate === -1) return null;
+    
+    // Parabolic Interpolation
+    const x0 = tauEstimate - 1; const x2 = tauEstimate + 1;
+    if(x0 < 0 || x2 >= ns/2) return this.ctx.sampleRate/tauEstimate;
+    const s0 = tauBuffer[x0]; const s1 = tauBuffer[tauEstimate]; const s2 = tauBuffer[x2];
+    let betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
+    return this.ctx.sampleRate / betterTau;
+  },
+
+  playTone(freq, duration) {
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    o.connect(g); g.connect(this.ctx.destination);
+    
+    const now = this.ctx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.2, now + 0.05);
+    g.gain.linearRampToValueAtTime(0, now + duration - 0.05);
+    
+    o.start(now); o.stop(now + duration);
   }
+};
 
-  if (tauEstimate === -1) return null;
+// --- 2. NOTE UTILS ---
+const NoteSys = {
+  NAMES: ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],
+  ftom(f) { return Math.round(12 * Math.log2(f/440) + 69); },
+  mtof(m) { return 440 * Math.pow(2, (m-69)/12); },
+  getName(m) { return this.NAMES[m%12]; }, // Note name only, no octave for cleaner UI if needed
+  getFullName(m) { return this.NAMES[m%12] + (Math.floor(m/12)-1); },
 
-  const x0 = tauEstimate < 1 ? tauEstimate : tauEstimate - 1;
-  const x2 = tauEstimate + 1 < ns / 2 ? tauEstimate + 1 : tauEstimate;
-  if (x0 === tauEstimate || x2 === tauEstimate) return audioCtx.sampleRate / tauEstimate;
+  // Get only notes in specific scale
+  getScaleNotes(rootMidi, rangeOctaves, scaleType) {
+    const intervals = scaleType === 'major' ? [0,2,4,5,7,9,11] :
+                      scaleType === 'minor' ? [0,2,3,5,7,8,10] :
+                      [0,1,2,3,4,5,6,7,8,9,10,11];
+    
+    let notes = [];
+    const maxMidi = rootMidi + (rangeOctaves * 12);
+    
+    for(let m = rootMidi; m <= maxMidi; m++) {
+      // Modulo math to find if note fits interval from root
+      const semitoneDist = (m - rootMidi) % 12;
+      if(intervals.includes(semitoneDist)) {
+        notes.push({ midi: m, freq: this.mtof(m), name: this.getFullName(m), isRoot: (semitoneDist===0) });
+      }
+    }
+    return notes;
+  }
+};
+
+// --- 3. APP LOGIC ---
+const App = {
+  state: 'MENU', // MENU, RANGE, GAME
+  rootMidi: 48, // C3 default
+  rangeOctaves: 2,
+  gameMode: 1, // 1, 2, or 3 notes
   
-  const s0 = tauBuffer[x0];
-  const s1 = tauBuffer[tauEstimate];
-  const s2 = tauBuffer[x2];
-  let betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
-  return audioCtx.sampleRate / betterTau;
-}
-
-// ==========================================
-// UTILS
-// ==========================================
-const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
-function freqToMidi(f) { return Math.round(12 * Math.log2(f / 440) + 69); }
-function getNoteName(m) { return NOTE_NAMES[m % 12] + (Math.floor(m / 12) - 1); }
-
-function getScaleNotes(root, type) {
-  const intervals = type === 'major' ? [0,2,4,5,7,9,11,12] 
-                  : type === 'minor' ? [0,2,3,5,7,8,10,12]
-                  : [0,1,2,3,4,5,6,7,8,9,10,11,12];
-  return intervals.map(i => {
-    const m = root + i;
-    return { midi: m, freq: midiToFreq(m), name: getNoteName(m) };
-  });
-}
-
-// ==========================================
-// GRAPHICS
-// ==========================================
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  bgCanvas.width = canvas.width;
-  bgCanvas.height = canvas.height;
-  if(notes.length > 0) renderStaticBackground();
-}
-window.addEventListener('resize', resize);
-
-function renderStaticBackground() {
-  bgCtx.fillStyle = '#111';
-  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+  // Game vars
+  notes: [],
+  playerY: 0,
+  currFreq: 0,
+  score: 0,
+  seqCount: 0,
+  isSpawning: false,
+  coins: [],
+  trail: [],
+  particles: [],
   
-  const minF = notes[0].freq;
-  const maxF = notes[notes.length-1].freq;
-  const logMin = Math.log2(minF);
-  const logMax = Math.log2(maxF);
+  // Canvas
+  canvas: document.getElementById('gameCanvas'),
+  ctx: document.getElementById('gameCanvas').getContext('2d'),
 
-  bgCtx.lineWidth = 1;
-  bgCtx.font = '12px sans-serif';
-  bgCtx.textBaseline = 'middle';
+  init() {
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    
+    // Button Bindings
+    document.getElementById('btnGoToRange').onclick = () => this.showRangeScreen();
+    
+    this.loop = this.loop.bind(this);
+    requestAnimationFrame(this.loop);
+  },
 
-  notes.forEach(note => {
-    const norm = (Math.log2(note.freq) - logMin) / (logMax - logMin);
-    const y = bgCanvas.height - (bgCanvas.height * 0.1) - (norm * (bgCanvas.height * 0.8));
-    
-    // FIX: Using actual HEX color instead of invalid string
-    const isRoot = note.midi % 12 === rootMidi % 12;
-    bgCtx.strokeStyle = isRoot ? '#444' : '#2a2a2a';
-    bgCtx.beginPath();
-    bgCtx.moveTo(0, y);
-    bgCtx.lineTo(bgCanvas.width, y);
-    bgCtx.stroke();
+  resize() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    // Re-render background if in game
+    if(this.state === 'GAME') this.renderStaticBG();
+  },
 
-    bgCtx.fillStyle = isRoot ? '#4caf50' : '#555';
-    bgCtx.fillText(note.name, 5, y - 8);
-  });
-}
+  // --- SCREENS ---
+  showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  },
 
-// ==========================================
-// GAME LOOP
-// ==========================================
-function startGame(selectedMode) {
-  log("Starting Game Mode: " + selectedMode);
-  initAudio().then(ready => {
-    if(!ready) return;
-    
-    mode = selectedMode;
-    const sType = document.querySelector('input[name="scale"]:checked').value;
-    notes = getScaleNotes(rootMidi, sType);
-    
-    score = 0; coinList = []; particles = []; trail = [];
-    elScore.innerText = '0';
-    
-    resize();
-    renderStaticBackground();
-    
-    document.getElementById('menu').style.display = 'none';
-    document.getElementById('gameContainer').style.display = 'flex';
-    
-    gameRunning = true;
-    lastTime = performance.now();
-    scheduleMelody();
-    loop();
-  });
-}
+  // --- RANGE TESTER ---
+  showRangeScreen() {
+    this.state = 'RANGE';
+    this.showScreen('screenRange');
+    this.rangeMin = Infinity; this.rangeMax = -Infinity;
+    this.isListeningRange = false;
+  },
 
-function scheduleMelody() {
-  if(!gameRunning) return;
-  const delay = 1000;
-  const count = mode === 'single' ? 1 : mode === 'double' ? 2 : 3;
-  
-  setTimeout(() => {
-    if(!gameRunning) return;
-    for(let i=0; i<count; i++) {
-      const note = notes[Math.floor(Math.random() * notes.length)];
-      const logMin = Math.log2(notes[0].freq);
-      const logMax = Math.log2(notes[notes.length-1].freq);
-      const norm = (Math.log2(note.freq) - logMin) / (logMax - logMin);
-      const y = canvas.height - (canvas.height * 0.1) - (norm * (canvas.height * 0.8));
-
-      coinList.push({
-        x: canvas.width + (i * 200),
-        y: y,
-        note: note,
-        collected: false,
-        r: 18
+  toggleRangeTest() {
+    if(!this.isListeningRange) {
+      AudioEngine.init().then(ok => {
+        if(ok) {
+          this.isListeningRange = true;
+          document.getElementById('btnRangeAction').innerText = "Stop & Save";
+          document.getElementById('btnRangeAction').classList.add('danger');
+        }
       });
-      playTone(note.freq, i * 0.4);
+    } else {
+      // Save
+      this.isListeningRange = false;
+      if(this.rangeMin < this.rangeMax) {
+        // Set game root to lowest C below rangeMin, or just rangeMin
+        // Let's snap to nearest C for cleaner scale logic
+        const lowMidi = NoteSys.ftom(this.rangeMin);
+        const highMidi = NoteSys.ftom(this.rangeMax);
+        this.rootMidi = lowMidi;
+        
+        // Update display
+        document.getElementById('rangeDisplay').innerText = 
+          `${NoteSys.getFullName(lowMidi)} - ${NoteSys.getFullName(highMidi)}`;
+      }
+      this.stopRangeTest();
     }
-  }, delay);
-}
+  },
 
-function playTone(freq, delaySec) {
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.connect(g); g.connect(audioCtx.destination);
-  o.type = 'sine';
-  o.frequency.value = freq;
-  const now = audioCtx.currentTime + delaySec;
-  g.gain.setValueAtTime(0, now);
-  g.gain.linearRampToValueAtTime(0.1, now + 0.05);
-  g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-  o.start(now);
-  o.stop(now + 0.5);
-}
+  stopRangeTest() {
+    this.state = 'MENU';
+    this.showScreen('screenMenu');
+    document.getElementById('btnRangeAction').innerText = "Start Listening";
+    document.getElementById('btnRangeAction').classList.remove('danger');
+  },
 
-function loop() {
-  if (!gameRunning) return;
-  animationId = requestAnimationFrame(loop);
+  // --- GAME START ---
+  startGame(notesCount) {
+    AudioEngine.init().then(ok => {
+      if(!ok) return;
+      
+      this.gameMode = notesCount;
+      const scaleType = document.querySelector('input[name="scale"]:checked').value;
+      
+      // GENERATE VALID NOTES FOR THE GRID
+      this.gridNotes = NoteSys.getScaleNotes(this.rootMidi, 1.5, scaleType); // 1.5 octave range for game
+      if(this.gridNotes.length < 5) { alert("Range too small!"); return; }
 
-  const now = performance.now();
-  const dt = (now - lastTime) / 1000;
-  lastTime = now;
+      // Reset Vars
+      this.score = 0; this.seqCount = 0;
+      this.coins = []; this.trail = []; this.particles = [];
+      this.isSpawning = false;
+      document.getElementById('scoreDisplay').innerText = "0";
+      
+      this.state = 'GAME';
+      this.showScreen('screenGame');
+      this.renderStaticBG();
+      
+      this.spawnSequence(); // Start first wave
+    });
+  },
 
-  // Pitch Logic
-  const detected = getPitch();
-  const minF = notes[0].freq;
-  const maxF = notes[notes.length-1].freq;
-  let hasPitch = false;
+  quitGame() {
+    this.state = 'MENU';
+    this.showScreen('screenMenu');
+  },
 
-  if (detected) {
-    let f = detected;
-    // Octave folding
-    while (f < minF / 1.5 && f > 10) f *= 2;
-    while (f > maxF * 1.5 && f > 10) f /= 2;
+  // --- NOTE SPAWNING LOGIC ---
+  spawnSequence() {
+    if(this.state !== 'GAME') return;
+    if(this.seqCount >= 10) { this.endGame(); return; }
+
+    this.isSpawning = true;
+    this.seqCount++;
+    document.getElementById('seqDisplay').innerText = this.seqCount;
+
+    // Pick 'gameMode' number of notes
+    let sequence = [];
+    let lastIdx = -1;
+
+    for(let i=0; i<this.gameMode; i++) {
+      // Pick random note from grid
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * this.gridNotes.length);
+      } while(idx === lastIdx); // Avoid immediate repeat
+      lastIdx = idx;
+      sequence.push(this.gridNotes[idx]);
+    }
+
+    // Schedule them
+    let delayAccumulator = 0;
+
+    sequence.forEach((note, i) => {
+      // AUDIO
+      setTimeout(() => {
+        if(this.state === 'GAME') AudioEngine.playTone(note.freq, CONSTANTS.NOTE_DURATION);
+      }, delayAccumulator * 1000);
+
+      // VISUAL (Coin)
+      // Calculate Y based on our Grid Notes (linear mapping to screen height)
+      // Note 0 is bottom, Note Max is top
+      const step = this.canvas.height / (this.gridNotes.length + 1);
+      const y = this.canvas.height - (this.gridNotes.indexOf(note) + 1) * step;
+
+      // Spawn coin slightly delayed to match audio hearing time
+      setTimeout(() => {
+        if(this.state === 'GAME') {
+          this.coins.push({
+            x: this.canvas.width + 50, // Start offscreen right
+            y: y,
+            freq: note.freq,
+            name: note.name,
+            collected: false
+          });
+        }
+        // If last note spawned, release lock
+        if(i === sequence.length - 1) {
+           // Allow next sequence ONLY after all coins are gone or offscreen
+           // We handle that in update()
+        }
+      }, delayAccumulator * 1000);
+
+      delayAccumulator += (CONSTANTS.NOTE_DURATION + CONSTANTS.NOTE_GAP);
+    });
+  },
+
+  // --- MAIN LOOP ---
+  loop() {
+    requestAnimationFrame(this.loop);
+
+    if(this.state === 'RANGE' && this.isListeningRange) {
+      this.updateRange();
+    } else if(this.state === 'GAME') {
+      this.updateGame();
+      this.drawGame();
+    }
+  },
+
+  // --- UPDATE: RANGE ---
+  updateRange() {
+    const p = AudioEngine.getPitch();
+    if(p && p > 60 && p < 1200) {
+      if(p < this.rangeMin) this.rangeMin = p;
+      if(p > this.rangeMax) this.rangeMax = p;
+      
+      const elBar = document.getElementById('vrmIndicator');
+      const elLow = document.getElementById('vrmLowMarker');
+      const elHigh = document.getElementById('vrmHighMarker');
+
+      // Visuals
+      // Log scale for better pitch viz
+      const minLog = Math.log2(65); // C2
+      const maxLog = Math.log2(1046); // C6
+      const pLog = Math.log2(p);
+      const pct = ((pLog - minLog) / (maxLog - minLog)) * 100;
+      elBar.style.bottom = Math.max(0, Math.min(100, pct)) + "%";
+      
+      elLow.innerText = "Low: " + NoteSys.getFullName(NoteSys.ftom(this.rangeMin));
+      elHigh.innerText = "High: " + NoteSys.getFullName(NoteSys.ftom(this.rangeMax));
+    }
+  },
+
+  // --- UPDATE: GAME ---
+  updateGame() {
+    // 1. Audio Pitch
+    const pitch = AudioEngine.getPitch();
+    let hasPitch = false;
     
-    if (smoothedFreq === 0) smoothedFreq = f;
-    else smoothedFreq = smoothedFreq + (f - smoothedFreq) * SMOOTHING;
-    currentFreq = f;
-    hasPitch = true;
-    elDebug.innerText = `${Math.round(currentFreq)}Hz ${getNoteName(freqToMidi(currentFreq))}`;
-  } else {
-    elDebug.innerText = "Sing!";
-  }
+    // Map pitch to grid range
+    const minF = this.gridNotes[0].freq;
+    const maxF = this.gridNotes[this.gridNotes.length-1].freq;
 
-  // Player Position
-  const logMin = Math.log2(minF);
-  const logMax = Math.log2(maxF);
-  let targetY = canvas.height / 2;
-  
-  if (currentFreq > 10) {
-    const norm = (Math.log2(smoothedFreq) - logMin) / (logMax - logMin);
-    targetY = canvas.height - (canvas.height * 0.1) - (norm * (canvas.height * 0.8));
-  }
-  playerY = playerY + (targetY - playerY) * 0.1;
+    if(pitch) {
+      // Octave folding logic (Singing too high/low snaps to grid)
+      let f = pitch;
+      while(f < minF * 0.8) f *= 2;
+      while(f > maxF * 1.2) f /= 2;
 
-  // Trail
-  if(hasPitch) trail.push({x: 100, y: playerY});
-  trail.forEach(t => t.x -= COIN_SPEED_BASE * dt);
-  trail = trail.filter(t => t.x > 0);
-
-  // Draw
-  ctx.drawImage(bgCanvas, 0, 0);
-
-  // Draw Trail
-  if(trail.length > 1) {
-    ctx.strokeStyle = 'rgba(76, 175, 80, 0.5)';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(trail[0].x, trail[0].y);
-    for(let i=1; i<trail.length; i++) ctx.lineTo(trail[i].x, trail[i].y);
-    ctx.stroke();
-  }
-
-  // Draw Coins & Collision
-  const pX = 100;
-  let allGone = coinList.length === 0;
-  
-  for (let i = coinList.length - 1; i >= 0; i--) {
-    let c = coinList[i];
-    c.x -= COIN_SPEED_BASE * dt;
-
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#000';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(c.note.name, c.x, c.y+3);
-
-    // Collision
-    if (!c.collected && Math.abs(c.x - pX) < 20) {
-      if (Math.abs(c.y - playerY) < 30) {
-        c.collected = true;
-        score += 50;
-        elScore.innerText = score;
-        spawnParticles(c.x, c.y, '#00ff00');
-        spawnFeedback("HIT!", c.x, c.y, '#00ff00');
-        coinList.splice(i, 1);
-      }
-    } else if (c.x < -20) {
-      coinList.splice(i, 1);
+      // Smoothing
+      this.currFreq = this.currFreq + (f - this.currFreq) * CONSTANTS.SMOOTHING;
+      hasPitch = true;
     }
-  }
 
-  // Draw Player
-  ctx.fillStyle = hasPitch ? '#4caf50' : '#555';
-  ctx.beginPath();
-  ctx.arc(pX, playerY, 15, 0, Math.PI*2);
-  ctx.fill();
+    // 2. Player Y Position
+    // We map frequency LOGARITHMICALLY to screen Y
+    // Matches the grid rendering exactly
+    if(this.currFreq > 0) {
+      // Find relative position within grid
+      // We essentially interpolate between grid note frequencies
+      // This ensures the ball lines up perfectly with the lines
+      
+      const logCurr = Math.log2(this.currFreq);
+      const logMin = Math.log2(minF);
+      const logMax = Math.log2(maxF);
+      
+      // Normalized 0..1
+      const norm = (logCurr - logMin) / (logMax - logMin);
+      
+      // Map to screen pixels (matching grid rendering logic)
+      const bottomY = this.canvas.height - (this.canvas.height / (this.gridNotes.length + 1));
+      const topY = this.canvas.height / (this.gridNotes.length + 1);
+      const rangeH = bottomY - topY;
+      
+      const targetY = bottomY - (norm * rangeH);
+      this.playerY = this.playerY + (targetY - this.playerY) * 0.2;
+    }
 
-  // Particles
-  updateParticles(dt);
+    // 3. Trail
+    if(hasPitch) {
+      this.trail.push({ x: 100, y: this.playerY });
+    }
+    // Move trail
+    for(let i=this.trail.length-1; i>=0; i--) {
+      this.trail[i].x -= (CONSTANTS.COIN_SPEED/60); // approx per frame
+      if(this.trail[i].x < 0) this.trail.splice(i, 1);
+    }
 
-  // Next Round Logic
-  if (coinList.length === 0 && !allGone) {
-    // Just cleared coins
-    scheduleMelody();
-  } else if (coinList.length === 0 && allGone) {
-      // Logic handled in scheduleMelody
-      if(!waitFlag) {
-          waitFlag = true;
-          setTimeout(()=> { scheduleMelody(); waitFlag = false; }, 500);
+    // 4. Coins logic
+    let activeCoins = false;
+    for(let i=this.coins.length-1; i>=0; i--) {
+      let c = this.coins[i];
+      c.x -= (CONSTANTS.COIN_SPEED/60);
+      
+      if(c.x > -50) activeCoins = true;
+      else { this.coins.splice(i,1); continue; }
+
+      // Collision
+      if(!c.collected && Math.abs(c.x - 100) < 30) {
+        // Check Y distance
+        if(Math.abs(c.y - this.playerY) < 40) {
+          c.collected = true;
+          this.score += 100;
+          document.getElementById('scoreDisplay').innerText = this.score;
+          this.spawnFeedback(c.x, c.y, "PERFECT!");
+          this.spawnExplosion(c.x, c.y);
+        }
       }
+    }
+
+    // 5. Spawn Next Wave?
+    if(!activeCoins && this.isSpawning) {
+      // Wave complete, wait a moment then spawn
+      this.isSpawning = false;
+      setTimeout(() => this.spawnSequence(), 1000);
+    }
+  },
+
+  // --- DRAW: GAME ---
+  renderStaticBG() {
+    // We create a temporary canvas to pre-render grid
+    // This saves massive CPU on mobile
+    this.bgCanvas = document.createElement('canvas');
+    this.bgCanvas.width = this.canvas.width;
+    this.bgCanvas.height = this.canvas.height;
+    const ctx = this.bgCanvas.getContext('2d');
+
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
+
+    const step = this.canvas.height / (this.gridNotes.length + 1);
+
+    ctx.textAlign = 'right';
+    ctx.font = '14px sans-serif';
+
+    this.gridNotes.forEach((n, i) => {
+      const y = this.canvas.height - (i + 1) * step;
+      
+      // Line
+      ctx.beginPath();
+      ctx.strokeStyle = n.isRoot ? '#444' : '#222'; // Root notes brighter
+      ctx.lineWidth = n.isRoot ? 2 : 1;
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.canvas.width, y);
+      ctx.stroke();
+
+      // Text
+      ctx.fillStyle = n.isRoot ? '#00e676' : '#555';
+      ctx.fillText(n.name, this.canvas.width - 10, y + 5);
+    });
+  },
+
+  drawGame() {
+    // 1. BG
+    if(this.bgCanvas) this.ctx.drawImage(this.bgCanvas, 0, 0);
+
+    // 2. Trail
+    if(this.trail.length > 1) {
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = 'rgba(0, 230, 118, 0.5)';
+      this.ctx.lineWidth = 4;
+      this.ctx.moveTo(this.trail[0].x, this.trail[0].y);
+      for(let p of this.trail) this.ctx.lineTo(p.x, p.y);
+      this.ctx.stroke();
+    }
+
+    // 3. Player
+    this.ctx.beginPath();
+    this.ctx.fillStyle = '#00e676';
+    this.ctx.arc(100, this.playerY, 12, 0, Math.PI*2);
+    this.ctx.fill();
+    // Glow
+    this.ctx.shadowBlur = 15;
+    this.ctx.shadowColor = '#00e676';
+    this.ctx.stroke();
+    this.ctx.shadowBlur = 0;
+
+    // 4. Coins
+    this.coins.forEach(c => {
+      if(c.collected) return;
+      this.ctx.beginPath();
+      this.ctx.fillStyle = '#FFD700';
+      this.ctx.arc(c.x, c.y, 15, 0, Math.PI*2);
+      this.ctx.fill();
+      this.ctx.fillStyle = '#000';
+      this.ctx.font = '10px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(c.name, c.x, c.y+4);
+    });
+
+    // 5. Particles
+    this.updateParticles();
+  },
+
+  spawnFeedback(x, y, text) {
+    const el = document.createElement('div');
+    el.className = 'feedback';
+    el.innerText = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.color = '#FFD700';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  },
+
+  spawnExplosion(x, y) {
+    for(let i=0; i<8; i++) {
+      this.particles.push({
+        x: x, y: y,
+        vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
+        life: 1.0
+      });
+    }
+  },
+
+  updateParticles() {
+    for(let i=this.particles.length-1; i>=0; i--) {
+      let p = this.particles[i];
+      p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+      if(p.life <= 0) { this.particles.splice(i,1); continue; }
+      
+      this.ctx.globalAlpha = p.life;
+      this.ctx.fillStyle = '#FFD700';
+      this.ctx.fillRect(p.x, p.y, 4, 4);
+      this.ctx.globalAlpha = 1.0;
+    }
+  },
+
+  endGame() {
+    alert("Round Complete! Score: " + this.score);
+    this.quitGame();
   }
-}
-let waitFlag = false;
+};
 
-// --- VFX ---
-function spawnParticles(x, y, color) {
-  for(let i=0; i<PARTICLE_COUNT; i++) {
-    particles.push({x:x, y:y, vx:(Math.random()-0.5)*200, vy:(Math.random()-0.5)*200, life:1.0, color:color});
-  }
-}
-function updateParticles(dt) {
-  for(let i=particles.length-1; i>=0; i--) {
-    let p = particles[i];
-    p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt*2;
-    if(p.life <= 0) { particles.splice(i,1); continue; }
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = p.life;
-    ctx.fillRect(p.x, p.y, 4, 4);
-    ctx.globalAlpha = 1.0;
-  }
-}
-function spawnFeedback(text, x, y, color) {
-  const el = document.createElement('div');
-  el.className = 'feedback-float';
-  el.innerText = text; el.style.color = color; el.style.left = x+'px'; el.style.top = y+'px';
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(), 800);
-}
+// Start
+App.init();
 
-// --- CONTROLS ---
-function updateMenuDisplay() {
-  const s = getNoteName(rootMidi);
-  const e = getNoteName(rootMidi + 12);
-  elOctave.innerText = `${s} - ${e}`;
-}
-
-document.getElementById('btnSingle').addEventListener('click', () => startGame('single'));
-document.getElementById('btnDouble').addEventListener('click', () => startGame('double'));
-document.getElementById('btnTriple').addEventListener('click', () => startGame('triple'));
-
-document.getElementById('octaveUpBtn').onclick = () => { if(rootMidi < 84) rootMidi+=12; updateMenuDisplay(); };
-document.getElementById('octaveDownBtn').onclick = () => { if(rootMidi > 24) rootMidi-=12; updateMenuDisplay(); };
-document.getElementById('noteUpBtn').onclick = () => { if(rootMidi < 90) rootMidi++; updateMenuDisplay(); };
-document.getElementById('noteDownBtn').onclick = () => { if(rootMidi > 21) rootMidi--; updateMenuDisplay(); };
-document.getElementById('quitBtn').onclick = () => location.reload();
-
-updateMenuDisplay();
 </script>
 </body>
 </html>
